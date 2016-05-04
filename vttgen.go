@@ -1,4 +1,4 @@
-package main
+package vttgen
 
 import (
 	"errors"
@@ -14,9 +14,11 @@ type VttGenerator struct {
 	Tbr      int
 }
 
-var generator VttGenerator
+func New() *VttGenerator {
+	return &VttGenerator{}
+}
 
-func Generate(input string, output string) error {
+func (v *VttGenerator) Generate(input string, output string) error {
 
 	if _, err := os.Stat(input); os.IsNotExist(err) {
 		return errors.New("Cannot read the input file")
@@ -27,8 +29,8 @@ func Generate(input string, output string) error {
 		log.Fatal(err)
 	}
 
-	generator.Duration = duration(string(out))
-	generator.Tbr = tbr(string(out))
+	v.Duration = duration(string(out))
+	v.Tbr = tbr(string(out))
 
 	return nil
 
@@ -41,7 +43,7 @@ func duration(output string) int {
 }
 
 func timeToSeconds(time string) int {
-	r, _ := regexp.Compile(`(?is)((\d+):(\d+):(\d+))`)
+	r, _ := regexp.Compile(`((\d+):(\d+):(\d+))`)
 	matches := r.FindStringSubmatch(string(time))
 
 	hours, _ := strconv.Atoi(matches[2])

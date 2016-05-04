@@ -1,9 +1,10 @@
-package main
+package vttgen
 
 import "log"
 
 func main() {
-	err := Generate("sample.mp4", "./test/test.mp4")
+	v := New()
+	err := v.Generate("sample.mp4", "./test/test.mp4")
 	if err != nil {
 		log.Fatal(err)
 	}
