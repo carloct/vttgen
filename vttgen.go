@@ -44,6 +44,7 @@ func (v *VttGenerator) Generate(input string, output string, timespan interface{
 		return errors.New("Cannot read the input file")
 	}
 	v.Input = input
+	v.Output = output
 
 	if timespan != nil {
 		v.TimeSpan = timespan.(int)
@@ -53,6 +54,15 @@ func (v *VttGenerator) Generate(input string, output string, timespan interface{
 		v.ThumbWidth = thumbwidth.(int)
 	}
 
+	_ = v.Details()
+
+	_ = v.Poster(20)
+
+	return nil
+
+}
+
+func (v *VttGenerator) Details() error {
 	out, err := exec.Command("ffprobe", "-i", v.Input).CombinedOutput()
 	if err != nil {
 		log.Fatal(err)
@@ -62,19 +72,17 @@ func (v *VttGenerator) Generate(input string, output string, timespan interface{
 	v.Video.Duration, v.Video.Start = duration(string(out))
 	v.Video.Tbr = tbr(string(out))
 
-	poster(20, v.Input, v.Output)
-
 	return nil
-
 }
 
-func poster(frame int, input string, output string) {
-	frame = strconv.Itoa(frame)
-	_, err = exec.Command("ffmpeg", "-ss", frame, "-i", input, "-y", "-vframes", "1", output+"poster.jpg").CombinedOutput()
+func (v *VttGenerator) Poster(frame int) error {
+	alpha := strconv.Itoa(frame)
+	_, err := exec.Command("ffmpeg", "-ss", alpha, "-i", v.Input, "-y", "-vframes", "1", v.Output+"poster.jpg").CombinedOutput()
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
+	return nil
 }
 
 func duration(output string) (int, float64) {
