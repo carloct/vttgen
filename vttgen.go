@@ -10,12 +10,28 @@ import (
 )
 
 type VttGenerator struct {
+	Video       Video
+	Input       string
+	Output      string
+	TimeSpan    int
+	ThumbWidth  int
+	SpriteWidth int
+	Commands    map[string]string
+}
+
+type Video struct {
 	Duration int
 	Tbr      int
 }
 
 func New() *VttGenerator {
-	return &VttGenerator{}
+	return &VttGenerator{
+		Commands: map[string]string{
+			"details": "ffprobe -i %s 2>&1",
+			"poster":  "ffmpeg -ss %d -i %s -y -vframes 1 %s/poster.jpg 2>&1",
+			"thumbs":  "ffmpeg ss %0.04f -i %s -y -an -sn -vsync 0 -q:v 5 -threads 1 -vf scale=%d:-1,select=\"not(mod(n\\,%d))\" \"%s/thumbnails/%s-%%04d.jpg\" 2>&1",
+		},
+	}
 }
 
 func (v *VttGenerator) Generate(input string, output string) error {
@@ -27,10 +43,11 @@ func (v *VttGenerator) Generate(input string, output string) error {
 	out, err := exec.Command("ffprobe", "-i", input).CombinedOutput()
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
-	v.Duration = duration(string(out))
-	v.Tbr = tbr(string(out))
+	v.Video.Duration = duration(string(out))
+	v.Video.Tbr = tbr(string(out))
 
 	return nil
 
