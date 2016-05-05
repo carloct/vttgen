@@ -70,7 +70,7 @@ func (v *VttGenerator) Generate(input string, output string, timespan interface{
 
 func poster(frame int, input string, output string) {
 	frame = strconv.Itoa(frame)
-	_, err = exec.Command("ffmpeg", "-ss", frame, "-i", v.Input, "-y", "-vframes", "1", v.Output+"poster.jpg").CombinedOutput()
+	_, err = exec.Command("ffmpeg", "-ss", frame, "-i", input, "-y", "-vframes", "1", output+"poster.jpg").CombinedOutput()
 	if err != nil {
 		log.Fatal(err)
 		return err
