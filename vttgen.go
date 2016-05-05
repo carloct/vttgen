@@ -1,4 +1,4 @@
-package vttgen
+package main
 
 import (
 	"errors"
@@ -22,41 +22,66 @@ type VttGenerator struct {
 type Video struct {
 	Duration int
 	Tbr      int
+	Start    float64
 }
 
 func New() *VttGenerator {
 	return &VttGenerator{
+		TimeSpan:    10,
+		ThumbWidth:  120,
+		SpriteWidth: 10,
 		Commands: map[string]string{
-			"details": "ffprobe -i %s 2>&1",
-			"poster":  "ffmpeg -ss %d -i %s -y -vframes 1 %s/poster.jpg 2>&1",
-			"thumbs":  "ffmpeg ss %0.04f -i %s -y -an -sn -vsync 0 -q:v 5 -threads 1 -vf scale=%d:-1,select=\"not(mod(n\\,%d))\" \"%s/thumbnails/%s-%%04d.jpg\" 2>&1",
+			"details": "ffprobe -i %s",
+			"poster":  "ffmpeg -ss %d -i %s -y -vframes 1 %s/poster.jpg",
+			"thumbs":  "ffmpeg -ss %0.04f -i %s -y -an -sn -vsync 0 -q:v 5 -threads 1 -vf scale=%d:-1,select=\"not(mod(n\\,%d))\" \"%s/thumbnails/%s-%%04d.jpg\"",
 		},
 	}
 }
 
-func (v *VttGenerator) Generate(input string, output string) error {
+func (v *VttGenerator) Generate(input string, output string, timespan interface{}, thumbwidth interface{}) error {
 
 	if _, err := os.Stat(input); os.IsNotExist(err) {
 		return errors.New("Cannot read the input file")
 	}
+	v.Input = input
 
-	out, err := exec.Command("ffprobe", "-i", input).CombinedOutput()
+	if timespan != nil {
+		v.TimeSpan = timespan.(int)
+	}
+
+	if thumbwidth != nil {
+		v.ThumbWidth = thumbwidth.(int)
+	}
+
+	out, err := exec.Command("ffprobe", "-i", v.Input).CombinedOutput()
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
 
-	v.Video.Duration = duration(string(out))
+	v.Video.Duration, v.Video.Start = duration(string(out))
 	v.Video.Tbr = tbr(string(out))
+
+	poster(20, v.Input, v.Output)
 
 	return nil
 
 }
 
-func duration(output string) int {
+func poster(frame int, input string, output string) {
+	frame = strconv.Itoa(frame)
+	_, err = exec.Command("ffmpeg", "-ss", frame, "-i", v.Input, "-y", "-vframes", "1", v.Output+"poster.jpg").CombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+}
+
+func duration(output string) (int, float64) {
 	r, _ := regexp.Compile(`(?is)Duration: ((\d+):(\d+):(\d+))\.\d+, start: ([^,]*)`)
 	matches := r.FindStringSubmatch(string(output))
-	return timeToSeconds(matches[1])
+	start, _ := strconv.ParseFloat(matches[5], 64)
+	return timeToSeconds(matches[1]), start
 }
 
 func timeToSeconds(time string) int {

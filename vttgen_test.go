@@ -1,4 +1,4 @@
-package vttgen
+package main
 
 import (
 	"testing"
@@ -23,10 +23,14 @@ func TestTbr(t *testing.T) {
 }
 
 func TestDuration(t *testing.T) {
-	in := "Duration: 00:01:06.20, start: 0.000000, bitrate: 1272 kb/s"
+	in := "Duration: 00:01:06.20, start: 0.000002, bitrate: 1272 kb/s"
 
-	out := duration(in)
+	out, start := duration(in)
 	if out != 66 {
 		t.Error("Expected 66, got ", out)
+	}
+
+	if start != 0.000002 {
+		t.Error("Expected 0.000002, got ", start)
 	}
 }
